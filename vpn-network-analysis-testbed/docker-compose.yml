@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  client:
+    image: python:3.10-slim
+    container_name: client_node
+    command: tail -f /dev/null  # Keeps the container running passively
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.5
+    cap_add:
+      - NET_ADMIN  # Grants network manipulation privileges
+
+  router:
+    image: ubuntu:latest
+    container_name: vpn_router
+    command: tail -f /dev/null
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.10
+      server_net:
+        ipv4_address: 10.0.2.10
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1 # CRITICAL: Tells the Linux kernel to allow IP forwarding
+
+  server:
+    image: python:3.10-slim
+    container_name: server_node
+    command: tail -f /dev/null
+    networks:
+      server_net:
+        ipv4_address: 10.0.2.5
+    cap_add:
+      - NET_ADMIN
+
+networks:
+  client_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.1.0/24
+  server_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.2.0/24
